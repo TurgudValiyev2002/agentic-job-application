@@ -1,0 +1,79 @@
+# `npm run db:up` still starts only Postgres for local `npm run dev`.
+# `docker compose up -d --build` runs the whole app: web on :3000, both workers, and the browser screen on :6080.
+x-app: &app
+  image: orch-app
+  env_file:
+    - path: .env.local
+      required: false
+  environment: &app-env
+    DATABASE_URL: postgresql://orch:orch@db:5432/orch
+    # localhost inside a container is the container itself; reach LM Studio on the host instead.
+    LMSTUDIO_BASE_URL: ${DOCKER_LMSTUDIO_BASE_URL:-http://host.docker.internal:1234/v1}
+    DISPLAY: display:99
+  extra_hosts:
+    - host.docker.internal:host-gateway
+  volumes:
+    - orch-uploads:/app/.uploads
+    - orch-cache:/app/.cache
+  shm_size: 1gb
+  restart: unless-stopped
+  depends_on:
+    migrate:
+      condition: service_completed_successfully
+    display:
+      condition: service_started
+
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: orch-db
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: orch
+      POSTGRES_PASSWORD: orch
+      POSTGRES_DB: orch
+    volumes:
+      - orch-db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orch -d orch"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    image: orch-app
+    build: .
+    command: ["node", "scripts/migrate.mjs"]
+    environment:
+      DATABASE_URL: postgresql://orch:orch@db:5432/orch
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  display:
+    build: docker/display
+    image: orch-display
+    ports:
+      - "127.0.0.1:${ORCH_DISPLAY_PORT:-6080}:6080"
+    restart: unless-stopped
+
+  web:
+    <<: *app
+    ports:
+      - "127.0.0.1:${ORCH_WEB_PORT:-3000}:3000"
+
+  pipeline:
+    <<: *app
+    command: ["node", "--conditions=react-server", "--import", "tsx", "services/pipeline/worker.ts"]
+
+  applications:
+    <<: *app
+    command: ["node", "--conditions=react-server", "--import", "tsx", "services/applications/worker.ts"]
+
+volumes:
+  orch-db-data:
+  orch-uploads:
+  orch-cache:

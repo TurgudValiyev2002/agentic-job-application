@@ -1,0 +1,2 @@
+ALTER TABLE "job_applications" ADD COLUMN "auto_apply" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "job_applications" ADD COLUMN "answer_evidence" jsonb DEFAULT '[]'::jsonb NOT NULL;

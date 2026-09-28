@@ -1,0 +1,1 @@
+ALTER TABLE "indeed_sessions" ADD COLUMN "application_history" jsonb;

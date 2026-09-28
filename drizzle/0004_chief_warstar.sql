@@ -1,0 +1,3 @@
+ALTER TABLE "cv_rewrites" ADD COLUMN "job_posting_id" uuid;--> statement-breakpoint
+ALTER TABLE "cv_rewrites" ADD CONSTRAINT "cv_rewrites_job_posting_id_job_postings_id_fk" FOREIGN KEY ("job_posting_id") REFERENCES "public"."job_postings"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "cv_rewrites_cv_document_id_job_posting_id_idx" ON "cv_rewrites" USING btree ("cv_document_id","job_posting_id");

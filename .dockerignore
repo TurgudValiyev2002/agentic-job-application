@@ -1,0 +1,14 @@
+.git
+.next
+node_modules
+.env*
+!.env.example
+.uploads
+.cache
+.claude
+.DS_Store
+*.tsbuildinfo
+next-env.d.ts
+npm-debug.log*
+docker-compose.yml
+Dockerfile
