@@ -1,20 +1,25 @@
 # `npm run db:up` still starts only Postgres for local `npm run dev`.
-# `docker compose up -d --build` runs the whole app: web on :3000, both workers, and the browser screen on :6080.
+# `docker compose up -d` builds and runs the whole app: web on :3000, both workers, and the browser screen on :6080.
 x-app: &app
   image: orch-app
+  # Built by the migrate service below; never looked up on Docker Hub.
+  pull_policy: never
   env_file:
     - path: .env.local
       required: false
   environment: &app-env
     DATABASE_URL: postgresql://orch:orch@db:5432/orch
-    # localhost inside a container is the container itself; reach LM Studio on the host instead.
-    LMSTUDIO_BASE_URL: ${DOCKER_LMSTUDIO_BASE_URL:-http://host.docker.internal:1234/v1}
+    # localhost inside a container is the container itself: model URLs on localhost (Ollama, LM Studio) go to the host.
+    ORCH_LOCALHOST_ALIAS: host.docker.internal
+    # Used only when .env.local sets no ACCOUNT_CREDENTIALS_KEY: generated on first use and kept in its own volume.
+    ACCOUNT_CREDENTIALS_KEY_FILE: /app/.keys/account-credentials.key
     DISPLAY: display:99
   extra_hosts:
     - host.docker.internal:host-gateway
   volumes:
     - orch-uploads:/app/.uploads
     - orch-cache:/app/.cache
+    - orch-keys:/app/.keys
   shm_size: 1gb
   restart: unless-stopped
   depends_on:
@@ -45,6 +50,8 @@ services:
   migrate:
     image: orch-app
     build: .
+    # Always built from this checkout (cached layers make it quick); there is nothing to pull.
+    pull_policy: build
     command: ["node", "scripts/migrate.mjs"]
     environment:
       DATABASE_URL: postgresql://orch:orch@db:5432/orch
@@ -56,6 +63,7 @@ services:
   display:
     build: docker/display
     image: orch-display
+    pull_policy: build
     ports:
       - "127.0.0.1:${ORCH_DISPLAY_PORT:-6080}:6080"
     restart: unless-stopped
@@ -77,3 +85,4 @@ volumes:
   orch-db-data:
   orch-uploads:
   orch-cache:
+  orch-keys:

@@ -17,7 +17,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "test:ai": "node --conditions=react-server --import tsx --test lib/ai/ollama.test.mjs lib/ai/cv-rewrite.test.mjs lib/ai/evidence.test.mjs lib/ai/embeddings.test.mjs lib/ai/job-screening.test.mjs",
+    "test:ai": "node --conditions=react-server --import tsx --test lib/ai/ollama.test.mjs lib/ai/cv-rewrite.test.mjs lib/ai/evidence.test.mjs lib/ai/embeddings.test.mjs lib/ai/job-screening.test.mjs lib/ai/host-url.test.mjs",
     "pipeline:worker": "node --conditions=react-server --import tsx services/pipeline/worker.ts",
     "test:pipeline": "node --conditions=react-server --import tsx --test lib/pipeline/engine.test.mjs lib/pipeline/tailoring.test.mjs",
     "test:pipeline:integration": "node --conditions=react-server --import tsx --test services/pipeline/integration.test.mjs",

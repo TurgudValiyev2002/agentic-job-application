@@ -8,7 +8,8 @@ WORKDIR /app
 
 # TeX Live for CV PDFs; pdflatex runs in-process instead of through the orch-latex sandbox container.
 COPY docker/latex/install-tex.sh /tmp/install-tex.sh
-RUN sh /tmp/install-tex.sh && rm /tmp/install-tex.sh
+# A Windows checkout can give the script CRLF line endings, which sh rejects; strip them first.
+RUN sed -i 's/\r$//' /tmp/install-tex.sh && sh /tmp/install-tex.sh && rm /tmp/install-tex.sh
 
 # Chromium plus its system libraries and fonts. Patchright and Playwright pin the same Chromium revision.
 COPY package.json package-lock.json ./
@@ -29,8 +30,8 @@ COPY --from=build /app ./
 RUN npm prune --omit=dev \
  && npm cache clean --force \
  && rm -rf .next/cache \
- && mkdir -p .uploads .cache \
- && chown -R node:node .uploads .cache
+ && mkdir -p .uploads .cache .keys \
+ && chown -R node:node .uploads .cache .keys
 USER node
 EXPOSE 3000
 CMD ["npx", "next", "start", "-H", "0.0.0.0", "-p", "3000"]

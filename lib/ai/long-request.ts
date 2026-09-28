@@ -1,6 +1,7 @@
 import "server-only";
 
 import { Agent } from "undici";
+import { reachableUrl } from "./host-url";
 
 function positiveInteger(value: string | undefined, fallback: number) {
   const parsed = Number(value);
@@ -26,7 +27,7 @@ function longRequestDispatcher(timeoutMs: number) {
 /** fetch whose transport limits match the caller's timeout instead of Node's five-minute default. */
 export function longFetch(url: string, init: RequestInit, timeoutMs: number) {
   // The DOM RequestInit type does not know Node's dispatcher option.
-  return fetch(url, { ...init, dispatcher: longRequestDispatcher(timeoutMs) } as RequestInit);
+  return fetch(reachableUrl(url), { ...init, dispatcher: longRequestDispatcher(timeoutMs) } as RequestInit);
 }
 
 /** The transport-level reason a fetch threw, for example "ECONNRESET" or "other side closed". */

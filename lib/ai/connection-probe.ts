@@ -5,6 +5,7 @@ import { connectionKinds, type ConnectionKind } from "./connection-kinds";
 import { getConnection, type ModelConnection } from "./connections";
 import { requestEmbeddings } from "./embeddings";
 import { providerFromConnection } from "./provider";
+import { reachableUrl } from "./host-url";
 
 /** A connection as typed in the Settings form, before (or instead of) saving it. */
 export const probeSchema = z.object({
@@ -56,7 +57,7 @@ export async function testConnection(connection: ModelConnection) {
 /** Model ids the server offers: Ollama's `/api/tags`, or `/models` on OpenAI-compatible APIs. */
 export async function listModels(connection: ModelConnection) {
   const native = connection.kind === "ollama";
-  const response = await fetch(`${connection.baseUrl}${native ? "/api/tags" : "/models"}`, {
+  const response = await fetch(reachableUrl(`${connection.baseUrl}${native ? "/api/tags" : "/models"}`), {
     headers: { "ngrok-skip-browser-warning": "true", ...(connection.apiKey ? { Authorization: `Bearer ${connection.apiKey}` } : {}) },
     signal: AbortSignal.timeout(15_000), cache: "no-store",
   });

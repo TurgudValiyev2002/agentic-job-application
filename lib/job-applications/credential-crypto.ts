@@ -1,8 +1,30 @@
 import "server-only";
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import path from "node:path";
+
+/**
+ * ACCOUNT_CREDENTIALS_KEY wins. Without it, docker-compose names a key file in its own volume: the first
+ * container to need it generates a random key there, so a fresh machine works without setup and every
+ * container shares the key. Outside Docker nothing is generated.
+ */
+function configuredKey() {
+  const value = process.env.ACCOUNT_CREDENTIALS_KEY?.trim();
+  const file = process.env.ACCOUNT_CREDENTIALS_KEY_FILE?.trim();
+  if (value || !file) return value ?? "";
+  try { return readFileSync(file, "utf8").trim(); } catch { /* not generated yet */ }
+  try {
+    mkdirSync(path.dirname(file), { recursive: true });
+    // "wx" fails if another container created it first; that key is then read below.
+    writeFileSync(file, `${randomBytes(32).toString("base64")}\n`, { flag: "wx", mode: 0o600 });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "EEXIST") return "";
+  }
+  return readFileSync(file, "utf8").trim();
+}
 
 function encryptionKey() {
-  const value = process.env.ACCOUNT_CREDENTIALS_KEY ?? "";
+  const value = configuredKey();
   if (!/^[A-Za-z0-9+/]{43}=$/.test(value)) throw new Error("Account credential encryption is not configured.");
   const key = Buffer.from(value, "base64");
   if (key.length !== 32) throw new Error("Account credential encryption is not configured.");

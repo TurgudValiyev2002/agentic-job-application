@@ -1,5 +1,7 @@
 import "server-only";
 
+import { reachableUrl } from "./host-url";
+
 export type OpenAiCompatibleMessage = {
   role: "system" | "user" | "assistant";
   content: string;
@@ -75,7 +77,7 @@ export async function requestOpenAiCompatibleCompletion({
   const startedAt = Date.now();
 
   try {
-    const response = await fetch(url, {
+    const response = await fetch(reachableUrl(url), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
